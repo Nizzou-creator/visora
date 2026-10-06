@@ -7,9 +7,6 @@ on:
       - 'VIZORA-1.0.0-starter.zip'
       - '.github/workflows/vizora-build.yml'
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,229 +15,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract VIZORA project
+      - name: Extract project
         run: |
           rm -rf build_src
-          mkdir -p build_src
+          mkdir build_src
           unzip -q VIZORA-1.0.0-starter.zip -d build_src
           test -f build_src/vizora/settings.gradle.kts
-          echo "VIZORA project found"
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-
-      - name: Replace MainActivity
+      - name: Build APK
         working-directory: build_src/vizora
-        shell: bash
         run: |
-          cat > app/src/main/java/com/vizora/app/MainActivity.kt <<'EOF'
-          package com.vizora.app
+          gradle --version
+          gradle clean assembleDebug --stacktrace
 
-          import android.os.Bundle
-          import androidx.activity.ComponentActivity
-          import androidx.activity.compose.setContent
-          import androidx.compose.foundation.background
-          import androidx.compose.foundation.layout.*
-          import androidx.compose.foundation.shape.RoundedCornerShape
-          import androidx.compose.material3.*
-          import androidx.compose.runtime.*
-          import androidx.compose.ui.Alignment
-          import androidx.compose.ui.Modifier
-          import androidx.compose.ui.graphics.Color
-          import androidx.compose.ui.text.font.FontWeight
-          import androidx.compose.ui.text.style.TextAlign
-          import androidx.compose.ui.unit.dp
-          import androidx.compose.ui.unit.sp
+      - name: Check APK
+        run: |
+          find build_src/vizora/app/build/outputs -name "*.apk" -print
+          test -n "$(find build_src/vizora/app/build/outputs -name '*.apk')"
 
-          class MainActivity : ComponentActivity() {
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContent {
-                      VIZORAApp()
-                  }
-              }
-          }
-
-          @Composable
-          fun VIZORAApp() {
-              MaterialTheme {
-                  Surface(
-                      modifier = Modifier.fillMaxSize(),
-                      color = Color(0xFF0B0B12)
-                  ) {
-                      VIZORAScreen()
-                  }
-              }
-          }
-
-          @Composable
-          fun VIZORAScreen() {
-              var editor by remember { mutableStateOf(false) }
-
-              if (editor) {
-                  EditorScreen {
-                      editor = false
-                  }
-              } else {
-                  HomeScreen {
-                      editor = true
-                  }
-              }
-          }
-
-          @Composable
-          fun HomeScreen(onCreate: () -> Unit) {
-              Column(
-                  modifier = Modifier
-                      .fillMaxSize()
-                      .background(Color(0xFF0B0B12))
-                      .padding(20.dp),
-                  horizontalAlignment = Alignment.CenterHorizontally
-              ) {
-                  Spacer(Modifier.height(45.dp))
-
-                  Text(
-                      "VIZORA",
-                      color = Color.White,
-                      fontSize = 42.sp,
-                      fontWeight = FontWeight.ExtraBold
-                  )
-
-                  Spacer(Modifier.height(8.dp))
-
-                  Text(
-                      "Create. Edit. Go Viral.",
-                      color = Color(0xFFB9A7FF),
-                      fontSize = 18.sp
-                  )
-
-                  Spacer(Modifier.height(35.dp))
-
-                  Card(
-                      modifier = Modifier.fillMaxWidth(),
-                      shape = RoundedCornerShape(24.dp),
-                      colors = CardDefaults.cardColors(
-                          containerColor = Color(0xFF171522)
-                      )
-                  ) {
-                      Column(Modifier.padding(22.dp)) {
-                          Text(
-                              "Create your next video",
-                              color = Color.White,
-                              fontSize = 22.sp,
-                              fontWeight = FontWeight.Bold
-                          )
-
-                          Spacer(Modifier.height(10.dp))
-
-                          Text(
-                              "Edit videos, add text, music and effects — all in one place.",
-                              color = Color(0xFFB8B5C4),
-                              fontSize = 15.sp
-                          )
-
-                          Spacer(Modifier.height(20.dp))
-
-                          Button(
-                              onClick = onCreate,
-                              modifier = Modifier.fillMaxWidth(),
-                              shape = RoundedCornerShape(16.dp),
-                              colors = ButtonDefaults.buttonColors(
-                                  containerColor = Color(0xFF7C4DFF)
-                              )
-                          ) {
-                              Text(
-                                  "Create New Project",
-                                  fontWeight = FontWeight.Bold
-                              )
-                          }
-                      }
-                  }
-
-                  Spacer(Modifier.height(20.dp))
-
-                  Row(
-                      Modifier.fillMaxWidth(),
-                      horizontalArrangement = Arrangement.spacedBy(12.dp)
-                  ) {
-                      FeatureCard("Templates", Modifier.weight(1f))
-                      FeatureCard("Effects", Modifier.weight(1f))
-                  }
-
-                  Spacer(Modifier.height(12.dp))
-
-                  Row(
-                      Modifier.fillMaxWidth(),
-                      horizontalArrangement = Arrangement.spacedBy(12.dp)
-                  ) {
-                      FeatureCard("Music", Modifier.weight(1f))
-                      FeatureCard("Captions", Modifier.weight(1f))
-                  }
-              }
-          }
-
-          @Composable
-          fun FeatureCard(title: String, modifier: Modifier) {
-              Card(
-                  modifier = modifier,
-                  shape = RoundedCornerShape(18.dp),
-                  colors = CardDefaults.cardColors(
-                      containerColor = Color(0xFF14131C)
-                  )
-              ) {
-                  Column(Modifier.padding(16.dp)) {
-                      Text(
-                          title,
-                          color = Color.White,
-                          fontSize = 17.sp,
-                          fontWeight = FontWeight.Bold
-                      )
-
-                      Spacer(Modifier.height(5.dp))
-
-                      Text(
-                          "Coming soon",
-                          color = Color(0xFF858190),
-                          fontSize = 13.sp
-                      )
-                  }
-              }
-          }
-
-          @Composable
-          fun EditorScreen(onBack: () -> Unit) {
-              Column(
-                  Modifier
-                      .fillMaxSize()
-                      .background(Color(0xFF08080D))
-                      .padding(16.dp)
-              ) {
-                  Text(
-                      "Editor",
-                      color = Color.White,
-                      fontSize = 28.sp,
-                      fontWeight = FontWeight.Bold
-                  )
-
-                  Spacer(Modifier.height(18.dp))
-
-                  Card(
-                      Modifier
-                          .fillMaxWidth()
-                          .height(260.dp),
-                      shape = RoundedCornerShape(20.dp),
-                      colors = CardDefaults.cardColors(
-                          containerColor = Color(0xFF17151F)
-                      )
-                  ) {
-                      Column(
-                          Modifier.fillMaxSize(),
-                         
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VIZORA-debug
+          path: build_src/vizora/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
