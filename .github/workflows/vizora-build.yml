@@ -1,4 +1,4 @@
-name: VIZORA Video Picker
+name: VIZORA Video Editor
 
 on:
   workflow_dispatch:
@@ -59,6 +59,7 @@ jobs:
           import android.widget.VideoView
           import androidx.activity.ComponentActivity
           import androidx.activity.compose.setContent
+          import androidx.activity.compose.rememberLauncherForActivityResult
           import androidx.activity.result.contract.ActivityResultContracts
           import androidx.compose.foundation.layout.Arrangement
           import androidx.compose.foundation.layout.Column
@@ -78,8 +79,8 @@ jobs:
           import androidx.compose.runtime.setValue
           import androidx.compose.ui.Alignment
           import androidx.compose.ui.Modifier
-          import androidx.compose.ui.viewinterop.AndroidView
           import androidx.compose.ui.unit.dp
+          import androidx.compose.ui.viewinterop.AndroidView
 
           class MainActivity : ComponentActivity() {
 
@@ -106,16 +107,18 @@ jobs:
                   mutableStateOf<Uri?>(null)
               }
 
-              val videoPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+              val launcher = rememberLauncherForActivityResult(
                   contract = ActivityResultContracts.GetContent()
-              ) { uri ->
-                  selectedVideo = uri
+              ) { uri: Uri? ->
+                  if (uri != null) {
+                      selectedVideo = uri
+                  }
               }
 
               Column(
                   modifier = Modifier
                       .fillMaxSize()
-                      .padding(20.dp),
+                      .padding(24.dp),
                   horizontalAlignment = Alignment.CenterHorizontally,
                   verticalArrangement = Arrangement.Center
               ) {
@@ -132,37 +135,41 @@ jobs:
                       style = MaterialTheme.typography.bodyLarge
                   )
 
-                  Spacer(modifier = Modifier.height(28.dp))
+                  Spacer(modifier = Modifier.height(30.dp))
 
                   if (selectedVideo == null) {
 
                       Text(
-                          text = "Start a new video project",
+                          text = "Ready to create?",
                           style = MaterialTheme.typography.titleLarge
                       )
 
-                      Spacer(modifier = Modifier.height(16.dp))
-
-                      Text(
-                          text = "Choose a video from your phone to start editing.",
-                          style = MaterialTheme.typography.bodyMedium
-                      )
-
-                      Spacer(modifier = Modifier.height(24.dp))
+                      Spacer(modifier = Modifier.height(20.dp))
 
                       Button(
                           onClick = {
-                              videoPicker.launch("video/*")
+                              launcher.launch("video/*")
                           },
                           modifier = Modifier.fillMaxWidth()
                       ) {
-                          Text("Choose Video")
+                          Text("Edit Video")
+                      }
+
+                      Spacer(modifier = Modifier.height(12.dp))
+
+                      Button(
+                          onClick = {
+                              launcher.launch("video/*")
+                          },
+                          modifier = Modifier.fillMaxWidth()
+                      ) {
+                          Text("New Project")
                       }
 
                   } else {
 
                       Text(
-                          text = "Your Video",
+                          text = "Video Preview",
                           style = MaterialTheme.typography.titleLarge
                       )
 
@@ -177,12 +184,11 @@ jobs:
                                   val controller = MediaController(context)
                                   controller.setAnchorView(this)
                                   setMediaController(controller)
-                                  setVideoURI(selectedVideo)
-                                  start()
                               }
                           },
                           update = { videoView ->
                               videoView.setVideoURI(selectedVideo)
+                              videoView.start()
                           }
                       )
 
@@ -190,7 +196,7 @@ jobs:
 
                       Button(
                           onClick = {
-                              videoPicker.launch("video/*")
+                              launcher.launch("video/*")
                           },
                           modifier = Modifier.fillMaxWidth()
                       ) {
@@ -221,7 +227,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: VIZORA-video-picker
+          name: VIZORA-video-editor
           path: build_src/vizora/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
