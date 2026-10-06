@@ -22,16 +22,34 @@ jobs:
           unzip -q VIZORA-1.0.0-starter.zip -d build_src
           test -f build_src/vizora/settings.gradle.kts
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      - name: Fix Java and Kotlin targets
+        working-directory: build_src/vizora
+        run: |
+          cat >> app/build.gradle.kts <<'EOF'
+
+          android {
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+          }
+
+          tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+              compilerOptions {
+                  jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+              }
+          }
+          EOF
+
       - name: Build APK
         working-directory: build_src/vizora
         run: |
-          gradle --version
           gradle clean assembleDebug --stacktrace
 
       - name: Check APK
